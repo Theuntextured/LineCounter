@@ -1,78 +1,78 @@
 ﻿#include "app_settings.h"
+#include <algorithm>
 #include <iostream>
+#include <filesystem>
+#include <string>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+static std::vector<std::string> split_by_comma(const std::string& input)
+{
+    std::vector<std::string> result;
+    size_t start = 0;
+    size_t end;
+
+    while ((end = input.find(',', start)) != std::string::npos)
+    {
+        result.push_back(input.substr(start, end - start));
+        start = end + 1;
+    }
+
+    // Push the last segment (if any)
+    if (start < input.size())
+        result.push_back(input.substr(start));
+    else if (input.back() == ',') // trailing comma case → add empty
+        result.emplace_back();
+
+    return result;
+}
+
 
 app_settings::app_settings(int argc, char* argv[])
 {
-    // --- Parse CLI arguments ---
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string arg = argv[i];
-        if (arg.rfind("--", 0) == 0)
-        {
-            const auto eqPos = arg.find('=');
-            if (eqPos != std::string::npos)
-            {
-                std::string key = arg.substr(2, eqPos - 2);
-                std::string value = arg.substr(eqPos + 1);
-                cli_params[key] = value;
-            }
-            else
-            {
-                // Flag-style arg (--something)
-                cli_params[arg.substr(2)] = "true";
-            }
-        }
-    }
+    CLI::App app{"Line Counter"};
+    argv = app.ensure_utf8(argv);
 
-    // --- Root folder ---
-    if (cli_params.count("root"))
-        root_folder = cli_params["root"];
-    else
-        root_folder = fs::current_path(); // Default to working directory
+    root_folder = fs::current_path().string();
+    app.add_option("-r,--root", root_folder, "Root folder to scan")->check(CLI::ExistingDirectory);
+    std::string subfolders_to_exclude_params = ".git,.vs,Binaries,Intermediate,DerivedDataCache";
+    app.add_option("-e,--exclude", subfolders_to_exclude_params, "Comma-separated list of subfolders to exclude");
+    std::string file_extensions_to_include_params = "cpp,h,hpp,inl";
+    app.add_option("-x,--ext", file_extensions_to_include_params, "Comma-separated list of file extensions to include");
 
+    try { (app).parse(argc, argv); } catch(const CLI::ParseError &e) { (app).exit(e); return; }
+    
     // --- Subfolders to exclude ---
-    if (cli_params.count("exclude"))
+    auto normalize_subfolder = [](std::string folder)
     {
-        std::string list = cli_params["exclude"];
-        size_t pos = 0;
-        while ((pos = list.find(',')) != std::string::npos)
-        {
-            subfolders_to_exclude.push_back(list.substr(0, pos));
-            list.erase(0, pos + 1);
-        }
-        if (!list.empty())
-            subfolders_to_exclude.push_back(list);
-    }
-    else
-    {
-        // Common defaults
-        subfolders_to_exclude = { ".git", ".vs", "Binaries", "Intermediate", "DerivedDataCache" };
-    }
+        // Ensure preferred separators
+        std::ranges::replace(folder, '\\', fs::path::preferred_separator);
+        std::ranges::replace(folder, '/', fs::path::preferred_separator);
 
+        // Ensure leading and trailing separator
+        if (folder.front() != fs::path::preferred_separator)
+            folder.insert(folder.begin(), fs::path::preferred_separator);
+        if (folder.back() != fs::path::preferred_separator)
+            folder.push_back(fs::path::preferred_separator);
+
+        return folder;
+    };
+    
     // --- File extensions to include ---
-    if (cli_params.count("ext"))
+    auto normalize_extension = [](std::string ext)
     {
-        std::string list = cli_params["ext"];
-        size_t pos = 0;
-        while ((pos = list.find(',')) != std::string::npos)
-        {
-            std::string ext = list.substr(0, pos);
-            if (ext[0] != '.')
-                ext.insert(ext.begin(), '.');
-            file_extensions_to_include.push_back(ext);
-            list.erase(0, pos + 1);
-        }
-        if (!list.empty())
-        {
-            if (list[0] != '.')
-                list.insert(list.begin(), '.');
-            file_extensions_to_include.push_back(list);
-        }
-    }
-    else
-    {
-        file_extensions_to_include = { ".cpp", ".h", ".hpp", ".inl" };
-    }
+        // remove leading '.'
+        if (!ext.empty() && ext.front() == '.')
+            ext.erase(ext.begin());
+        return ext;
+    };
+
+    for (const auto& e : split_by_comma(subfolders_to_exclude_params))
+        subfolders_to_exclude.push_back(normalize_subfolder(e));
+    for (const auto& e : split_by_comma(file_extensions_to_include_params))
+        file_extensions_to_include.push_back(normalize_extension(e));
+
 
     // --- Logging summary ---
     std::cout << "Root folder: " << root_folder << "\n";

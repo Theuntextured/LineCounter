@@ -157,18 +157,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Analyzers\c_analyzer\c_analyzer.cpp" />
+    <ClCompile Include="Analyzers\generic_analyzer\generic_analyzer.cpp" />
     <ClCompile Include="AppFramework\app_settings.cpp" />
-    <ClCompile Include="AppFramework\tree_node.cpp" />
+    <ClCompile Include="AppFramework\code_analyzer.cpp" />
+    <ClCompile Include="AppFramework\counters.cpp" />
+    <ClCompile Include="App\line_counter_app.cpp" />
     <ClCompile Include="LineCounter.cpp" />
     <ClCompile Include="Nodes\file_node.cpp" />
     <ClCompile Include="Nodes\folder_node.cpp" />
+    <ClCompile Include="UI\window_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Analyzers\c_analyzer\c_analyzer.h" />
+    <ClInclude Include="Analyzers\generic_analyzer\generic_analyzer.h" />
     <ClInclude Include="AppFramework\app_settings.h" />
+    <ClInclude Include="AppFramework\CLI11.hpp" />
+    <ClInclude Include="AppFramework\code_analyzer.h" />
     <ClInclude Include="AppFramework\common.h" />
+    <ClInclude Include="AppFramework\counters.h" />
     <ClInclude Include="AppFramework\tree_node.h" />
+    <ClInclude Include="App\line_counter_app.h" />
     <ClInclude Include="Nodes\file_node.h" />
     <ClInclude Include="Nodes\folder_node.h" />
+    <ClInclude Include="UI\window_manager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
