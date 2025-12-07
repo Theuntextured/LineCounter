@@ -127,7 +127,7 @@ void folder_node::setup_explorer(class window_manager* window_manager, class lin
     if (ImGui::IsItemHovered())
     {
         ImGui::SetTooltip((path_.string() + "\n" + get_counters().to_string()).c_str());
-        app->hovered_path = path_.string();
+        app->hovered_path = (path_ / "").string();
     }
 
     ImGui::SameLine();

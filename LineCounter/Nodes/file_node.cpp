@@ -68,8 +68,8 @@ void file_node::setup_explorer(class window_manager* window_manager, class line_
 void file_node::setup_treemap(class window_manager* window_manager, class line_counter_app* app,
     ImDrawList* draw_list, ImVec2 min, ImVec2 max, bool horizontal)
 {
-    if (min.x == max.x || min.y == max.y) return;
-    bool hovered = path_.string().starts_with(app->hovered_path);
+    if (min.x >= max.x || min.y >= max.y) return;
+    bool hovered = (path_ / "").string().starts_with(app->hovered_path);
     
     sf::Color SfColor = get_fill_color();
     if (!hovered) SfColor.a *= 0.25;

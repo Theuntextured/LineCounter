@@ -38,7 +38,7 @@ void window_manager::setup_file_explorer()
     
     ImGui::Begin("File Tree", nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-    app_->hovered_path = app_->root_node->get_path().string();
+    app_->hovered_path = (app_->root_node->get_path() / "").string();
     app_->root_node->setup_explorer(this, app_);
     ImGui::End();
 }
