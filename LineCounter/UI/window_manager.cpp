@@ -87,7 +87,7 @@ void window_manager::setup_file_statistics()
     // Example stats (replace these with your real data)
     const auto counters = app_->selected_node->get_counters();
     ImGui::Text("Files: %d", counters.files);
-    ImGui::Text("Lines: %d", 3332, counters.lines);
+    ImGui::Text("Lines: %d", counters.lines);
     ImGui::Text("Lines of code: %d", counters.lines_of_code);
     ImGui::Text("Comments: %d", counters.comment_lines);
     ImGui::Text("Characters: %d", counters.characters);
