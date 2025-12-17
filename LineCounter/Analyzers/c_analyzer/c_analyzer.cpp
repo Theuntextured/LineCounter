@@ -70,4 +70,4 @@ counters c_analyzer::analyze_file(const std::vector<std::string>& file_contents)
     return out;
 }
 
-REGISTER_ANALYZER(c_analyzer, "c", "h", "cpp", "hpp", "inl", "cs"); //cs still should work with this
+REGISTER_ANALYZER(c_analyzer, "c", "h", "cpp", "hpp", "inl", "cs", "hlsl", "usf", "ush"); //c-style means also other languages....

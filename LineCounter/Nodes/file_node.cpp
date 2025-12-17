@@ -26,6 +26,7 @@ sf::Color file_node::get_fill_color() const
         { "usf", sf::Color::Magenta },
         { "hlsl", sf::Color::Magenta },
         { "glsl", sf::Color::Magenta },
+        { "ush", sf::Color::Magenta}
     };
     auto ext = path_.extension().string();
     if (ext.starts_with(".")) ext.erase(ext.begin());

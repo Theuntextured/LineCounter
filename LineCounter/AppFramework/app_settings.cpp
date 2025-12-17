@@ -36,9 +36,9 @@ app_settings::app_settings(int argc, char* argv[])
 
     root_folder = fs::current_path().string();
     app.add_option("-r,--root", root_folder, "Root folder to scan")->check(CLI::ExistingDirectory);
-    std::string subfolders_to_exclude_params = ".git,.vs,Binaries,Intermediate,DerivedDataCache";
+    std::string subfolders_to_exclude_params = ".git,.vs,Binaries,Intermediate,DerivedDataCache,Saved";
     app.add_option("-e,--exclude", subfolders_to_exclude_params, "Comma-separated list of subfolders to exclude");
-    std::string file_extensions_to_include_params = "cpp,h,hpp,inl";
+    std::string file_extensions_to_include_params = "cpp,h,hpp,inl,usf,ush,cs";
     app.add_option("-x,--ext", file_extensions_to_include_params, "Comma-separated list of file extensions to include");
 
     try { (app).parse(argc, argv); } catch(const CLI::ParseError &e) { (app).exit(e); return; }
