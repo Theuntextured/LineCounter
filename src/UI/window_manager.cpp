@@ -5,6 +5,10 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#ifndef APP_VERSION
+#define APP_VERSION "v0.0.0-dev"
+#endif
+
 window_manager::window_manager(line_counter_app *in_app) : app_(in_app)
 {
     if (!glfwInit()) {
@@ -12,8 +16,7 @@ window_manager::window_manager(line_counter_app *in_app) : app_(in_app)
         std::exit(1);
     }
 
-    // Create window with graphics context
-    window_handle = glfwCreateWindow(1280, 720, "Line Counter", nullptr, nullptr);
+    window_handle = glfwCreateWindow(1280, 720, "Line Counter " APP_VERSION, nullptr, nullptr);
     if (window_handle == nullptr) {
         glfwTerminate();
         std::exit(1);

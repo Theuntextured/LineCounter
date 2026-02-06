@@ -44,6 +44,29 @@ list(APPEND SOURCES
         "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp"
 )
 
+# --- VERSIONING ---
+set(BUILD_VERSION "v0.0.0-dev")
+
+find_package(Git)
+if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+    )
+    if(GIT_VERSION)
+        set(BUILD_VERSION ${GIT_VERSION})
+    endif()
+endif()
+
+if(DEFINED CLI_VERSION)
+    set(BUILD_VERSION ${CLI_VERSION})
+endif()
+
+add_compile_definitions(APP_VERSION="${BUILD_VERSION}")
+
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -72,4 +95,8 @@ if(MSVC)
     )
 endif()
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY WIN32_EXECUTABLE OFF)
+set_property(TARGET ${PROJECT_NAME} PROPERTY WIN32_EXECUTABLE ON)
+
+if(MSVC)
+    target_link_options(${PROJECT_NAME} PRIVATE "$<$<CONFIG:Debug>:/SUBSYSTEM:CONSOLE>")
+endif()
