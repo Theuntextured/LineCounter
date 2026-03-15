@@ -40,8 +40,12 @@ app_settings::app_settings(int argc, char* argv[])
     app.add_option("-e,--exclude", subfolders_to_exclude_params, "Comma-separated list of subfolders to exclude");
     std::string file_extensions_to_include_params = "cpp,h,hpp,inl,usf,ush,cs";
     app.add_option("-x,--ext", file_extensions_to_include_params, "Comma-separated list of file extensions to include");
+    std::string log_local_path = "line_log.csv";
+    app.add_option("-l,--log", log_local_path, "Log file path");
 
-    try { (app).parse(argc, argv); } catch(const CLI::ParseError &e) { (app).exit(e); return; }
+    try { app.parse(argc, argv); } catch(const CLI::ParseError &e) { (app).exit(e); return; }
+
+    log_file_path = root_folder / log_local_path;
     
     // --- Subfolders to exclude ---
     auto normalize_subfolder = [](std::string folder)

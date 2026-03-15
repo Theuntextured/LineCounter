@@ -1,9 +1,13 @@
-﻿#include "window_manager.h"
+﻿#pragma once
+#include "window_manager.h"
 #include "imgui.h"
 #include "App/line_counter_app.h"
 #include "Nodes/folder_node.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "implot.h"
+#include "AppFramework/csv.h"
+#include "AppFramework/app_settings.h"
 
 #ifndef APP_VERSION
 #define APP_VERSION "v0.0.0-dev"
@@ -28,6 +32,7 @@ window_manager::window_manager(line_counter_app *in_app) : app_(in_app)
     // Setup ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -35,12 +40,21 @@ window_manager::window_manager(line_counter_app *in_app) : app_(in_app)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window_handle, true);
     ImGui_ImplOpenGL3_Init("#version 130");
+
+    csv::load_progress_data(g_settings.log_file_path,
+        timestamps_,
+        file_count_,
+        line_counts_,
+        line_of_code_counts,
+        comment_line_counts_,
+        character_counts_);
 }
 
 window_manager::~window_manager()
 {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     glfwDestroyWindow(window_handle);
@@ -63,6 +77,7 @@ void window_manager::tick(const float dt)
     setup_file_explorer();
     setup_file_statistics();
     setup_quad_tree();
+    render_progress_graph();
         
     ImGui::Render();
     int display_w, display_h;
@@ -88,14 +103,14 @@ ImVec2 window_manager::get_size() const
 
 void window_manager::setup_file_explorer()
 {
-    const ImVec2 window_size(get_size().x, get_size().y);
-    const ImVec2 explorer_size = {window_size.x * .25f, window_size.y * .75f};
-
-    const ImVec2 explorer_pos(window_size.x - explorer_size.x, 0.0f);
+    const ImVec2 window_size = get_size();
+    // Shrunk height from .75f to .50f to make room for the graph
+    const ImVec2 explorer_size = {window_size.x * 0.35f, window_size.y * 0.40f};
+    const ImVec2 explorer_pos(window_size.x * 0.65f, 0.0f);
 
     ImGui::SetNextWindowPos(explorer_pos, ImGuiCond_Always);
     ImGui::SetNextWindowSize(explorer_size, ImGuiCond_Always);
-    
+
     ImGui::Begin("File Tree", nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     app_->hovered_path = (app_->root_node->get_path() / "").string();
@@ -103,12 +118,63 @@ void window_manager::setup_file_explorer()
     ImGui::End();
 }
 
+void window_manager::render_progress_graph()
+{
+    const ImVec2 window_size = get_size();
+    const ImVec2 graph_size = {window_size.x * 0.35f, window_size.y * 0.45f};
+    const ImVec2 graph_pos(window_size.x * 0.65f, window_size.y * 0.40f);
+
+    ImGui::SetNextWindowPos(graph_pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(graph_size, ImGuiCond_Always);
+
+    ImGui::Begin("Data Over Time", nullptr,
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+
+    // Passing ImVec2(-1, -1) forces the plot to fill the entire ImGui window nicely
+    if (ImPlot::BeginPlot("Project Metrics Over Time", ImVec2(-1, -1))) {
+        ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);
+        ImPlot::SetupAxis(ImAxis_Y1, "Count"); // Generic label since we have mixed data
+
+        // Plotting each metric. Empty checks ensure we do not crash if data is misaligned.
+        if (!file_count_.empty()) {
+            ImPlot::PlotLine("Files",
+                             timestamps_.data(), file_count_.data(), timestamps_.size());
+        }
+
+        if (!line_counts_.empty()) {
+            ImPlot::PlotLine("Total Lines",
+                             timestamps_.data(), line_counts_.data(), timestamps_.size());
+        }
+
+        if (!line_of_code_counts.empty()) {
+            ImPlot::PlotLine("Lines of Code",
+                             timestamps_.data(), line_of_code_counts.data(), timestamps_.size());
+        }
+
+        if (!comment_line_counts_.empty()) {
+            ImPlot::PlotLine("Comments",
+                             timestamps_.data(), comment_line_counts_.data(), timestamps_.size());
+        }
+
+        if (!character_counts_.empty()) {
+            ImPlot::PlotLine("Characters",
+                             timestamps_.data(), character_counts_.data(), timestamps_.size());
+        }
+
+        ImPlot::EndPlot();
+    }
+
+    ImGui::End();
+}
+
 void window_manager::setup_file_statistics()
-{    
-    const ImVec2 window_size(get_size().x, get_size().y);
-    
-    const ImVec2 stats_size(window_size.x * .25f, window_size.x * .25f);
-    const ImVec2 stats_pos(window_size.x * .75, window_size.y * .75f);
+{
+    const ImVec2 window_size = get_size();
+
+    // Fixed the bug here: changed window_size.x to window_size.y for the height parameter
+    const ImVec2 stats_size(window_size.x * 0.35f, window_size.y * 0.15f);
+    // Positioned at the 75% vertical mark, right below the new graph
+    const ImVec2 stats_pos(window_size.x * 0.65f, window_size.y * 0.85f);
 
     ImGui::SetNextWindowPos(stats_pos, ImGuiCond_Always);
     ImGui::SetNextWindowSize(stats_size, ImGuiCond_Always);
@@ -143,7 +209,7 @@ void window_manager::setup_file_statistics()
     }
 
     ImGui::Text((app_->selected_node->get_path().string() + "\n").c_str());
-    
+
     // Example stats (replace these with your real data)
     const auto counters = app_->selected_node->get_counters();
     ImGui::Text("Files: %u", counters.files);
@@ -158,7 +224,7 @@ void window_manager::setup_file_statistics()
 void window_manager::setup_quad_tree()
 {
     const ImVec2 WindowSize(get_size().x, get_size().y);
-    const ImVec2 QuadTreeSize(WindowSize.x * 0.75f, WindowSize.y);
+    const ImVec2 QuadTreeSize(WindowSize.x * 0.65f, WindowSize.y);
     constexpr ImVec2 QuadTreePos(0.0f, 0.0f);
 
     ImGui::SetNextWindowPos(QuadTreePos, ImGuiCond_Always);
@@ -168,7 +234,8 @@ void window_manager::setup_quad_tree()
         ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoCollapse |
-        ImGuiWindowFlags_NoScrollbar);
+        ImGuiWindowFlags_NoScrollbar|
+        ImGuiWindowFlags_NoScrollWithMouse);
 
     // --- Reserve a region inside the window as our "canvas" ---
     const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
@@ -183,8 +250,5 @@ void window_manager::setup_quad_tree()
     if (app_ && app_->root_node)
         app_->selected_node->setup_treemap(this, app_, DrawList, CanvasMin, CanvasMax, true);
 
-    ImGui::Dummy(CanvasSize);
-
     ImGui::End();
 }
-

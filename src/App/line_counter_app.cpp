@@ -1,5 +1,6 @@
 ﻿#include "line_counter_app.h"
 #include "AppFramework/app_settings.h"
+#include "AppFramework/csv.h"
 #include "Nodes/folder_node.h"
 
 
@@ -16,8 +17,8 @@ void line_counter_app::initialize()
     selected_node = root_node;
     root_node->cleanup();
     std::cout << root_node->get_counters().to_string() << '\n';
+    csv::append_data_to_csv(g_settings.log_file_path, root_node->get_counters());
     app_window_manager = new window_manager(this);
-
 }
 
 void line_counter_app::run()

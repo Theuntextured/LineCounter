@@ -26,6 +26,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+FetchContent_Declare(
+        implot
+        GIT_REPOSITORY https://github.com/epezent/implot.git
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(implot)
+
 file(GLOB_RECURSE SOURCES
         "src/*.cpp"
         "src/*.h"
@@ -37,6 +44,9 @@ list(APPEND SOURCES
         "${imgui_SOURCE_DIR}/imgui_draw.cpp"
         "${imgui_SOURCE_DIR}/imgui_tables.cpp"
         "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
+        "${implot_SOURCE_DIR}/implot.cpp"
+        "${implot_SOURCE_DIR}/implot_items.cpp"
+        "${implot_SOURCE_DIR}/implot_demo.cpp"
 )
 
 list(APPEND SOURCES
@@ -73,6 +83,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         src
         ${imgui_SOURCE_DIR}
         ${imgui_SOURCE_DIR}/backends
+        ${implot_SOURCE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw opengl32)

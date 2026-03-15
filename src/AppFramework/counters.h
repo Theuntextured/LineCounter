@@ -36,13 +36,13 @@ inline const char* to_string(stat_type e)
  */
 struct counters
 {
-    size_t files = 0;
-    size_t lines = 0;
-    size_t lines_of_code = 0;
-    size_t comment_lines = 0;
-    size_t characters = 0;
+    uint64_t files = 0;
+    uint64_t lines = 0;
+    uint64_t lines_of_code = 0;
+    uint64_t comment_lines = 0;
+    uint64_t characters = 0;
 
-    size_t operator[](stat_type type) const;
+    uint64_t operator[](stat_type type) const;
 
     counters operator+(const counters& other) const;
     counters operator +=(const counters& other);
